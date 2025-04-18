@@ -1,27 +1,83 @@
 ﻿<Window x:Class="Group_Project.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Group_Project"
-        mc:Ignorable="d"
-        Title="WeatherApp" Height="591" Width="696">
-    <Grid Margin="10,10,-102,0" Height="556" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5">
-        <Grid.RenderTransform>
-            <TransformGroup>
-                <ScaleTransform/>
-                <SkewTransform/>
-                <RotateTransform Angle="0.0"/>
-                <TranslateTransform/>
-            </TransformGroup>
-        </Grid.RenderTransform>
-        <!-- City input -->
-        <TextBox Name="txtCity" Margin="223,10,0,518" HorizontalAlignment="Left" Width="438"/>
-        <!-- Button to trigger weather fetch -->
-        <Button Name="btnGetWeather" Content="Get Weather" Click="btnGetWeather_Click" Margin="10,10,0,518" HorizontalAlignment="Left" Width="208"/>
-        <!-- TextBox to display daily forecast -->
-        <TextBox Name="txtWeather" TextWrapping="Wrap" IsReadOnly="True" Margin="223,45,0,20" HorizontalAlignment="Left" Width="438"/>
-        <!-- New TextBox to display hourly report -->
-        <TextBox Name="txtHourlyWeather" TextWrapping="Wrap" IsReadOnly="True" Margin="10,45,0,20" HorizontalAlignment="Left" Width="208"/>
+        Title="WeatherApp" Height="600" Width="800">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <!-- Input row -->
+            <RowDefinition Height="Auto"/>
+            <!-- 7‑day forecast -->
+            <RowDefinition Height="3*"/>
+            <!-- hourly strip -->
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Row 0: City label, input, unit toggle, Get Weather button -->
+        <StackPanel Grid.Row="0"
+                Orientation="Horizontal"
+                VerticalAlignment="Center"
+                Margin="0,0,0,10">
+            <TextBlock Text="City:"
+                 VerticalAlignment="Center"
+                 Margin="0,0,5,0"/>
+            <TextBox x:Name="txtCity"
+               Width="300"
+               Height="30"
+               VerticalContentAlignment="Center"
+               Margin="0,0,10,0"/>
+            <ToggleButton x:Name="toggleUnit"
+                    Content="°F"
+                    IsChecked="True"
+                    Checked="toggleUnit_Checked"
+                    Unchecked="toggleUnit_Unchecked"
+                    Width="60"
+                    Height="30"
+                    Margin="0,0,10,0"/>
+            <Button x:Name="btnGetWeather"
+              Content="Get Weather"
+              Click="btnGetWeather_Click"
+              Width="120"
+              Height="30"/>
+        </StackPanel>
+
+        <!-- Row 1: 7‑Day Forecast as vertically stacked cards -->
+        <Border Grid.Row="1"
+        Background="#E0F7FA"
+        CornerRadius="8"
+        Padding="10"
+        Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="7‑Day Forecast"
+               FontSize="18"
+               FontWeight="Bold"
+               Margin="0,0,0,10"/>
+                <!-- Now a vertical StackPanel instead of a UniformGrid -->
+                <StackPanel x:Name="DailyPanel"
+                Orientation="Vertical"
+                HorizontalAlignment="Stretch"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Row 2: Hourly Forecast Strip (click‑and‑drag) -->
+        <Border Grid.Row="2"
+            Background="#E1F5FE"
+            CornerRadius="8"
+            Padding="10">
+            <StackPanel>
+                <TextBlock Text="Hourly Forecast (next 24 h)"
+                   FontSize="16"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,5"/>
+                <ScrollViewer x:Name="HourlyScrollViewer"
+                      HorizontalScrollBarVisibility="Hidden"
+                      VerticalScrollBarVisibility="Disabled"
+                      PreviewMouseLeftButtonDown="HourlyScrollViewer_PreviewMouseLeftButtonDown"
+                      PreviewMouseMove="HourlyScrollViewer_PreviewMouseMove"
+                      PreviewMouseLeftButtonUp="HourlyScrollViewer_PreviewMouseLeftButtonUp">
+                    <StackPanel x:Name="HourlyPanel"
+                      Orientation="Horizontal"/>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>
