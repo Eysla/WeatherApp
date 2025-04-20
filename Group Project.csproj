@@ -10,7 +10,78 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Images\clear#0.png" />
+    <None Remove="Images\clear.png" />
+    <None Remove="Images\dense-drizzle#55.png" />
+    <None Remove="Images\dense-freezing-drizzle#57.png" />
+    <None Remove="Images\densedrizzle.png" />
+    <None Remove="Images\densefreezingdrizzle.png" />
+    <None Remove="Images\fog#45.png" />
+    <None Remove="Images\fog.png" />
+    <None Remove="Images\heavy-freezing-rain#67.png" />
+    <None Remove="Images\heavy-rain#8265.png" />
+    <None Remove="Images\heavy-snowfall#7586.png" />
+    <None Remove="Images\heavyfreezingrain.png" />
+    <None Remove="Images\heavyrain.png" />
+    <None Remove="Images\heavysnowfall.png" />
+    <None Remove="Images\light-drizzle#51.png" />
+    <None Remove="Images\light-freezing-drizzle#56.png" />
+    <None Remove="Images\light-freezing-rain#66.png" />
+    <None Remove="Images\light-rain#61.png" />
+    <None Remove="Images\lightdrizzle.png" />
+    <None Remove="Images\lightfreezingdrizzle.png" />
+    <None Remove="Images\lightfreezingrain.png" />
+    <None Remove="Images\lightrain.png" />
+    <None Remove="Images\moderate-drizzle#53.png" />
+    <None Remove="Images\moderate-rain#8163.png" />
+    <None Remove="Images\moderate-snowfall#73.png" />
+    <None Remove="Images\moderatedrizzle.png" />
+    <None Remove="Images\moderaterain.png" />
+    <None Remove="Images\moderatesnowfall.png" />
+    <None Remove="Images\mostly-clear#1.png" />
+    <None Remove="Images\mostlyclear.png" />
+    <None Remove="Images\partly-cloudy#2.png" />
+    <None Remove="Images\partlycloudy.png" />
+    <None Remove="Images\rime-fog#48.png" />
+    <None Remove="Images\rimefog.png" />
+    <None Remove="Images\slight-snowfall#71.png" />
+    <None Remove="Images\slightsnowfall.png" />
+    <None Remove="Images\snowflake#77.png" />
+    <None Remove="Images\snowflake.png" />
+    <None Remove="Images\thunderstorm#95.png" />
+    <None Remove="Images\thunderstorm-with-hail#9699.png" />
+    <None Remove="Images\thunderstorm.png" />
+    <None Remove="Images\thunderstorms.png" />
+    <None Remove="Images\thunderstormwithhail.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Images\clear.png" />
+    <Resource Include="Images\densedrizzle.png" />
+    <Resource Include="Images\densefreezingdrizzle.png" />
+    <Resource Include="Images\fog.png" />
+    <Resource Include="Images\heavyfreezingrain.png" />
+    <Resource Include="Images\heavyrain.png" />
+    <Resource Include="Images\heavysnowfall.png" />
+    <Resource Include="Images\lightdrizzle.png" />
+    <Resource Include="Images\lightfreezingdrizzle.png" />
+    <Resource Include="Images\lightfreezingrain.png" />
+    <Resource Include="Images\lightrain.png" />
+    <Resource Include="Images\moderatedrizzle.png" />
+    <Resource Include="Images\moderaterain.png" />
+    <Resource Include="Images\moderatesnowfall.png" />
+    <Resource Include="Images\mostlyclear.png" />
+    <Resource Include="Images\overcast.png" />
+    <Resource Include="Images\partlycloudy.png" />
+    <Resource Include="Images\rimefog.png" />
+    <Resource Include="Images\slightsnowfall.png" />
+    <Resource Include="Images\snowflake.png" />
+    <Resource Include="Images\thunderstorm.png" />
+    <Resource Include="Images\thunderstormwithhail.png" />
   </ItemGroup>
 
 </Project>
