@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Newtonsoft.Json.Linq;
@@ -13,15 +15,17 @@ namespace Group_Project
 {
     public partial class MainWindow : Window
     {
+        // Flags and state for click‑and‑drag scrolling of hourly forecast strip
+        private bool _isDraggingHourly;
+        private Point _hourlyDragStart;
+        private double _hourlyStartOffset;
+
         public MainWindow()
         {
             InitializeComponent();
         }
 
-        private bool _isDraggingHourly;
-        private Point _hourlyDragStart;
-        private double _hourlyStartOffset;
-
+        // Responsible for toggling the temperature unit between Celsius and Fahrenheit.
         private void toggleUnit_Checked(object sender, RoutedEventArgs e)
         {
             toggleUnit.Content = "°F";
@@ -32,8 +36,15 @@ namespace Group_Project
             toggleUnit.Content = "°C";
         }
 
+        // Main handler for the Get Weather button.
+        // 1) Validates city input
+        // 2) Geocodes city to lat/lon via Nominatim
+        // 3) Fetches weather data from Open‑Meteo
+        // 4) Fetches active alerts from NWS
+        // 5) Populates UI panels (alerts banner, 7‑day cards, hourly strip)
         private async void btnGetWeather_Click(object sender, RoutedEventArgs e)
         {
+            // Read and trim city name
             string cityName = txtCity.Text.Trim();
             if (string.IsNullOrEmpty(cityName))
             {
@@ -41,54 +52,67 @@ namespace Group_Project
                 return;
             }
 
+            // Decide unit and symbol based on toggle state
             bool isFahrenheit = toggleUnit.IsChecked == true;
             string unit = isFahrenheit ? "fahrenheit" : "celsius";
             string unitSymbol = isFahrenheit ? "°F" : "°C";
 
-            // 1) Geocode
-            string geoUrl = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(cityName)}&format=json&limit=1";
+            // 1) Build Nominatim geocode URL
+            string geoUrl = $"https://nominatim.openstreetmap.org/search?" +
+                            $"q={Uri.EscapeDataString(cityName)}&format=json&limit=1";
+
             try
             {
                 using var client = new HttpClient();
+                // Required header per Nominatim usage policy
                 client.DefaultRequestHeaders.Add("User-Agent", "Group_Project_App");
 
+                // Send geocoding request
                 var geoResp = await client.GetAsync(geoUrl);
                 geoResp.EnsureSuccessStatusCode();
                 var geoJson = JArray.Parse(await geoResp.Content.ReadAsStringAsync());
+
+                // If city not found, inform user
                 if (geoJson.Count == 0)
                 {
                     MessageBox.Show("City not found.");
                     return;
                 }
 
+                // Extract latitude and longitude from response
                 string lat = geoJson[0]["lat"].ToString();
                 string lon = geoJson[0]["lon"].ToString();
 
-                // 2) Weather API
+                // 2) Build Open‑Meteo weather API URL
                 string weatherUrl =
-                    $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}" +
-                    $"&hourly=temperature_2m,precipitation_probability,weathercode" +
-                    $"&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode" +
-                    $"&current_weather=true" +
+                    $"https://api.open-meteo.com/v1/forecast?" +
+                    $"latitude={lat}&longitude={lon}" +
+                    "&hourly=temperature_2m,precipitation_probability,weathercode" +
+                    "&daily=temperature_2m_max,temperature_2m_min," +
+                        "precipitation_probability_max,weathercode" +
+                    "&current_weather=true" +
                     $"&temperature_unit={unit}" +
-                    $"&forecast_days=7" +
-                    $"&timezone=auto";
+                    "&forecast_days=7" +
+                    "&timezone=auto";
 
+                // Send weather data request
                 var weatherResp = await client.GetAsync(weatherUrl);
                 weatherResp.EnsureSuccessStatusCode();
                 var weatherJson = JObject.Parse(await weatherResp.Content.ReadAsStringAsync());
 
-                // --- Fetch active alerts from NWS API ---
+                // --- Fetch alerts from NWS API ---
                 string alertsUrl = $"https://api.weather.gov/alerts/active?point={lat},{lon}";
                 var alertsResp = await client.GetAsync(alertsUrl);
+
                 if (alertsResp.IsSuccessStatusCode)
                 {
+                    // Parse GeoJSON features array
                     var alertsJson = JObject.Parse(await alertsResp.Content.ReadAsStringAsync());
                     var features = (JArray)alertsJson["features"];
 
                     if (features.Count > 0)
                     {
-                        // Collect distinct alert events
+                        // Collate unique 'event' strings (e.g. "Tornado Warning")
                         var events = features
                             .Select(f => f["properties"]?["event"]?.ToString())
                             .Where(ev => !string.IsNullOrEmpty(ev))
@@ -100,6 +124,7 @@ namespace Group_Project
                     }
                     else
                     {
+                        // No active alerts
                         AlertsBanner.Text = "No active alerts.";
                         AlertsBorder.Background = Brushes.LightGreen;
                         AlertsBanner.Foreground = Brushes.Black;
@@ -107,40 +132,47 @@ namespace Group_Project
                 }
                 else
                 {
+                    // Alert API down or unreachable
                     AlertsBanner.Text = "Alerts unavailable.";
                     AlertsBorder.Background = Brushes.Gray;
                     AlertsBanner.Foreground = Brushes.White;
                 }
 
-                // --- Populate 7‑day cards ---
+                // --- Populate 7‑day forecast cards ---
                 DailyPanel.Children.Clear();
                 var dailyTimes = (JArray)weatherJson["daily"]["time"];
                 var dailyMaxTemps = (JArray)weatherJson["daily"]["temperature_2m_max"];
                 var dailyMinTemps = (JArray)weatherJson["daily"]["temperature_2m_min"];
                 var dailyPrecip = (JArray)weatherJson["daily"]["precipitation_probability_max"];
-                var dailyWeatherCodes = (JArray)weatherJson["daily"]["weathercode"];
+                var dailyCodes = (JArray)weatherJson["daily"]["weathercode"];
+
                 for (int i = 0; i < dailyTimes.Count; i++)
                 {
                     string date = dailyTimes[i].ToString();
                     int hi = dailyMaxTemps[i].ToObject<int>();
                     int lo = dailyMinTemps[i].ToObject<int>();
                     int precipPct = dailyPrecip[i].ToObject<int>();
-                    int code = dailyWeatherCodes[i].ToObject<int>();
+                    int code = dailyCodes[i].ToObject<int>();
+
                     AddDailyCard(date, hi, lo, precipPct, code, unitSymbol);
                 }
 
-                // --- Populate hourly strip ---
+                // --- Populate hourly forecast strip ---
                 HourlyPanel.Children.Clear();
+
+                // Get current weather snapshot
                 string curTimeStr = weatherJson["current_weather"]["time"].ToString();
                 DateTime curTime = DateTime.Parse(curTimeStr);
-                // show current hour first
                 int curTemp = weatherJson["current_weather"]["temperature"].ToObject<int>();
-                int curPrecip = 0;
-                int curCode = 0;
+
+                // Default if not found in hourly array
+                int curPrecip = 0, curCode = 0;
                 var hoursTimes = (JArray)weatherJson["hourly"]["time"];
                 var hoursTemps = (JArray)weatherJson["hourly"]["temperature_2m"];
                 var hoursPrecip = (JArray)weatherJson["hourly"]["precipitation_probability"];
                 var hoursCodes = (JArray)weatherJson["hourly"]["weathercode"];
+
+                // Match the current hour to get precip & code
                 for (int j = 0; j < hoursTimes.Count; j++)
                 {
                     if (DateTime.Parse(hoursTimes[j].ToString()) == curTime)
@@ -152,7 +184,7 @@ namespace Group_Project
                 }
                 AddHourlyCard(curTime, curTemp, curPrecip, curCode, unitSymbol);
 
-                // then next 24 hours
+                // Then show the next 24 hours
                 DateTime endTime = curTime.AddHours(24);
                 int count = 0;
                 for (int i = 0; i < hoursTimes.Count && count < 24; i++)
@@ -170,10 +202,13 @@ namespace Group_Project
             }
             catch (Exception ex)
             {
+                // Display any unexpected errors
                 MessageBox.Show($"Error: {ex.Message}");
             }
         }
 
+        // Builds a single day card in the 7‑day forecast area.
+        // Creates an icon + date + high/low/precip chances grid.
         private void AddDailyCard(
             string date,
             int hi,
@@ -182,11 +217,12 @@ namespace Group_Project
             int weatherCode,
             string unitSymbol)
         {
-            // 1) parse date
-            if (!DateTime.TryParse(date, out DateTime dt)) dt = DateTime.Today;
+            // Parse & format date (e.g. April 17)
+            if (!DateTime.TryParse(date, out DateTime dt))
+                dt = DateTime.Today;
             string formattedDate = dt.ToString("MMMM d");
 
-            // 2) map code → icon filename
+            // Map weatherCode to an icon filename
             string iconFile = weatherCode switch
             {
                 0 => "clear.png",
@@ -209,9 +245,11 @@ namespace Group_Project
                 75 or 86 => "heavysnowfall.png",
                 77 => "snowflake.png",
                 95 => "thunderstorm.png",
-                96 or 99 => "thunderstormwithhail.png"
+                96 or 99 => "thunderstormwithhail.png",
+                _ => "unknown.png",
             };
 
+            // Create the visual card container
             var card = new Border
             {
                 Background = Brushes.LightBlue,
@@ -221,15 +259,15 @@ namespace Group_Project
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
 
-            // 3) grid: [Icon][Date *][High Auto][Low Auto][Precip Auto]
+            // Grid layout: icon | date(*) | high | low | precip
             var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // icon
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // date
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // high
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // low
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // precip
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            // 4) icon
+            // Icon image from Resources
             var img = new Image
             {
                 Source = new BitmapImage(new Uri($"pack://application:,,,/Images/{iconFile}")),
@@ -240,7 +278,7 @@ namespace Group_Project
             };
             Grid.SetColumn(img, 0);
 
-            // 5) date
+            // Date text
             var dateText = new TextBlock
             {
                 Text = formattedDate,
@@ -250,27 +288,27 @@ namespace Group_Project
             };
             Grid.SetColumn(dateText, 1);
 
-            // 6) high
+            // High temp text
             var highText = new TextBlock
             {
-                Text = $"High: {hi}{unitSymbol} ",
+                Text = $"High: {hi}{unitSymbol}",
                 VerticalAlignment = VerticalAlignment.Center,
                 TextAlignment = TextAlignment.Right,
                 Margin = new Thickness(8, 0, 8, 0)
             };
             Grid.SetColumn(highText, 2);
 
-            // 7) low
+            // Low temp text
             var lowText = new TextBlock
             {
-                Text = $"Low:  {lo}{unitSymbol}   ",
+                Text = $"Low:  {lo}{unitSymbol}",
                 VerticalAlignment = VerticalAlignment.Center,
                 TextAlignment = TextAlignment.Right,
                 Margin = new Thickness(8, 0, 8, 0)
             };
             Grid.SetColumn(lowText, 3);
 
-            // 8) precip
+            // Precipitation text
             var precipText = new TextBlock
             {
                 Text = $"Precip: {precipPct}%",
@@ -279,7 +317,7 @@ namespace Group_Project
             };
             Grid.SetColumn(precipText, 4);
 
-            // 9) assemble
+            // Assemble and add to panel
             grid.Children.Add(img);
             grid.Children.Add(dateText);
             grid.Children.Add(highText);
@@ -289,14 +327,15 @@ namespace Group_Project
             DailyPanel.Children.Add(card);
         }
 
+        // Builds a single hourly forecast card with an icon stacked above time/temp/precip text.
         private void AddHourlyCard(
-            DateTime time, 
-            int temp, 
-            int precip, 
-            int weatherCode, 
+            DateTime time,
+            int temp,
+            int precip,
+            int weatherCode,
             string unitSymbol)
         {
-            // 1) map code → icon filename (same mapping as your daily cards)
+            // Map code → icon (same as daily)
             string iconFile = weatherCode switch
             {
                 0 => "clear.png",
@@ -319,10 +358,11 @@ namespace Group_Project
                 75 or 86 => "heavysnowfall.png",
                 77 => "snowflake.png",
                 95 => "thunderstorm.png",
-                96 or 99 => "thunderstormwithhail.png"
+                96 or 99 => "thunderstormwithhail.png",
+                _ => "unknown.png",
             };
 
-            // 2) build the card
+            // Create card border
             var card = new Border
             {
                 Background = Brushes.LightSkyBlue,
@@ -332,14 +372,14 @@ namespace Group_Project
                 HorizontalAlignment = HorizontalAlignment.Center
             };
 
-            // 3) stack icon over text
+            // Vertical stack for icon over text
             var stack = new StackPanel
             {
                 Orientation = Orientation.Vertical,
                 HorizontalAlignment = HorizontalAlignment.Center
             };
 
-            // icon
+            // Icon image
             var img = new Image
             {
                 Source = new BitmapImage(new Uri($"pack://application:,,,/Images/{iconFile}")),
@@ -350,7 +390,7 @@ namespace Group_Project
             };
             stack.Children.Add(img);
 
-            // time + temp + precip lines
+            // Combined time/temp/precip text
             var text = new TextBlock
             {
                 Text = $"{time:hh:mm tt}\n{temp}{unitSymbol}\nPrecip: {precip}%",
@@ -362,9 +402,8 @@ namespace Group_Project
             HourlyPanel.Children.Add(card);
         }
 
-
-        // Click-&-drag panning for the hourly strip:
-        private void HourlyScrollViewer_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        // Begin drag‑scroll when mouse button is pressed.
+        private void HourlyScrollViewer_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             _isDraggingHourly = true;
             _hourlyDragStart = e.GetPosition(HourlyScrollViewer);
@@ -373,7 +412,8 @@ namespace Group_Project
             e.Handled = true;
         }
 
-        private void HourlyScrollViewer_PreviewMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        // Scroll horizontally as the mouse moves.
+        private void HourlyScrollViewer_PreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (!_isDraggingHourly) return;
             var current = e.GetPosition(HourlyScrollViewer);
@@ -381,11 +421,32 @@ namespace Group_Project
             HourlyScrollViewer.ScrollToHorizontalOffset(_hourlyStartOffset + delta);
         }
 
-        private void HourlyScrollViewer_PreviewMouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        // End drag‑scroll when mouse button is released.
+        private void HourlyScrollViewer_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (!_isDraggingHourly) return;
             _isDraggingHourly = false;
             HourlyScrollViewer.ReleaseMouseCapture();
+        }
+
+        // Opens the Nominatim attribution link in the default browser.
+        private void Nominatim_LinkClicked(object sender, MouseButtonEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "https://nominatim.openstreetmap.org/",
+                UseShellExecute = true
+            });
+        }
+
+        // Opens the Open‑Meteo attribution link in the default browser.
+        private void OpenMeteo_LinkClicked(object sender, MouseButtonEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "https://open-meteo.com/",
+                UseShellExecute = true
+            });
         }
     }
 }
