@@ -8,6 +8,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Group_Project.UserControls;
 using Newtonsoft.Json.Linq;
 using Point = System.Windows.Point;
 
@@ -23,6 +24,10 @@ namespace Group_Project
         public MainWindow()
         {
             InitializeComponent();
+            string defautlCity = "Nashville";
+            City.Text = defautlCity;
+            getWeather(defautlCity, "fahrenheit", "°F");
+            HourlyPanel.Visibility = Visibility.Collapsed;
         }
 
         // Responsible for toggling the temperature unit between Celsius and Fahrenheit.
@@ -42,21 +47,23 @@ namespace Group_Project
         // 3) Fetches weather data from Open‑Meteo
         // 4) Fetches active alerts from NWS
         // 5) Populates UI panels (alerts banner, 7‑day cards, hourly strip)
-        private async void btnGetWeather_Click(object sender, RoutedEventArgs e)
+        private void btnGetWeather_Click(object sender, RoutedEventArgs e)
         {
             // Read and trim city name
-            string cityName = txtCity.Text.Trim();
+            string cityName = txtSearch.Text.Trim();
             if (string.IsNullOrEmpty(cityName))
             {
                 MessageBox.Show("Please enter a city name.");
                 return;
             }
-
             // Decide unit and symbol based on toggle state
             bool isFahrenheit = toggleUnit.IsChecked == true;
             string unit = isFahrenheit ? "fahrenheit" : "celsius";
             string unitSymbol = isFahrenheit ? "°F" : "°C";
+            getWeather(cityName, unit, unitSymbol);
+        }
 
+        private async void getWeather(string cityName, string unit, string unitSymbol) {
             // 1) Build Nominatim geocode URL
             string geoUrl = $"https://nominatim.openstreetmap.org/search?" +
                             $"q={Uri.EscapeDataString(cityName)}&format=json&limit=1";
@@ -78,6 +85,7 @@ namespace Group_Project
                     MessageBox.Show("City not found.");
                     return;
                 }
+                City.Text = cityName;
 
                 // Extract latitude and longitude from response
                 string lat = geoJson[0]["lat"].ToString();
@@ -250,81 +258,15 @@ namespace Group_Project
             };
 
             // Create the visual card container
-            var card = new Border
-            {
-                Background = Brushes.LightBlue,
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(8),
-                Margin = new Thickness(0, 0, 0, 6),
-                HorizontalAlignment = HorizontalAlignment.Stretch
-            };
-
-            // Grid layout: icon | date(*) | high | low | precip
-            var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            // Icon image from Resources
-            var img = new Image
+            CardDay cardDay = new CardDay()
             {
                 Source = new BitmapImage(new Uri($"pack://application:,,,/Images/{iconFile}")),
-                Width = 32,
-                Height = 32,
-                Margin = new Thickness(0, 0, 8, 0),
-                VerticalAlignment = VerticalAlignment.Center
+                Day = formattedDate,
+                Maxtemp = $"{hi}{unitSymbol}",
+                Mintemp = $"{lo}{unitSymbol}",
+                Prcpt = $"{precipPct}%"
             };
-            Grid.SetColumn(img, 0);
-
-            // Date text
-            var dateText = new TextBlock
-            {
-                Text = formattedDate,
-                FontWeight = FontWeights.Bold,
-                VerticalAlignment = VerticalAlignment.Center,
-                TextAlignment = TextAlignment.Left
-            };
-            Grid.SetColumn(dateText, 1);
-
-            // High temp text
-            var highText = new TextBlock
-            {
-                Text = $"High: {hi}{unitSymbol}",
-                VerticalAlignment = VerticalAlignment.Center,
-                TextAlignment = TextAlignment.Right,
-                Margin = new Thickness(8, 0, 8, 0)
-            };
-            Grid.SetColumn(highText, 2);
-
-            // Low temp text
-            var lowText = new TextBlock
-            {
-                Text = $"Low:  {lo}{unitSymbol}",
-                VerticalAlignment = VerticalAlignment.Center,
-                TextAlignment = TextAlignment.Right,
-                Margin = new Thickness(8, 0, 8, 0)
-            };
-            Grid.SetColumn(lowText, 3);
-
-            // Precipitation text
-            var precipText = new TextBlock
-            {
-                Text = $"Precip: {precipPct}%",
-                VerticalAlignment = VerticalAlignment.Center,
-                TextAlignment = TextAlignment.Right
-            };
-            Grid.SetColumn(precipText, 4);
-
-            // Assemble and add to panel
-            grid.Children.Add(img);
-            grid.Children.Add(dateText);
-            grid.Children.Add(highText);
-            grid.Children.Add(lowText);
-            grid.Children.Add(precipText);
-            card.Child = grid;
-            DailyPanel.Children.Add(card);
+            DailyPanel.Children.Add(cardDay);
         }
 
         // Builds a single hourly forecast card with an icon stacked above time/temp/precip text.
@@ -362,44 +304,15 @@ namespace Group_Project
                 _ => "unknown.png",
             };
 
-            // Create card border
-            var card = new Border
-            {
-                Background = Brushes.LightSkyBlue,
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(6),
-                Margin = new Thickness(0, 0, 8, 0),
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
-
-            // Vertical stack for icon over text
-            var stack = new StackPanel
-            {
-                Orientation = Orientation.Vertical,
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
-
-            // Icon image
-            var img = new Image
+            // Create the visual card container
+            CardHour cardHour = new CardHour()
             {
                 Source = new BitmapImage(new Uri($"pack://application:,,,/Images/{iconFile}")),
-                Width = 24,
-                Height = 24,
-                Margin = new Thickness(0, 0, 0, 4),
-                VerticalAlignment = VerticalAlignment.Center
+                Hour= $"{time:hh:mm tt}",
+                Temp= $"{temp}{unitSymbol}",
+                Prcpt= $"{precip}%"
             };
-            stack.Children.Add(img);
-
-            // Combined time/temp/precip text
-            var text = new TextBlock
-            {
-                Text = $"{time:hh:mm tt}\n{temp}{unitSymbol}\nPrecip: {precip}%",
-                TextAlignment = TextAlignment.Center
-            };
-            stack.Children.Add(text);
-
-            card.Child = stack;
-            HourlyPanel.Children.Add(card);
+            HourlyPanel.Children.Add( cardHour );
         }
 
         // Begin drag‑scroll when mouse button is pressed.
@@ -447,6 +360,62 @@ namespace Group_Project
                 FileName = "https://open-meteo.com/",
                 UseShellExecute = true
             });
+        }
+
+        private void exitButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                this.DragMove();
+            }
+        }
+
+        private void textSearch_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            txtSearch.Focus();
+        }
+
+        private void txtSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(txtSearch.Text) && txtSearch.Text.Length > 0)
+            {
+                textSearch.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                textSearch.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void txtSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                btnGetWeather_Click(sender, e);
+            }
+        }
+
+        private void todayLabel_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            HourlyPanel.Visibility = Visibility.Visible;
+            DailyPanel.Visibility = Visibility.Collapsed;
+
+            todayLabel.Style = (Style)Application.Current.Resources["activeTextButton"];
+            weekLabel.Style = (Style)Application.Current.Resources["textButton"];
+        }
+
+        private void weekLabel_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            HourlyPanel.Visibility= Visibility.Collapsed;
+            DailyPanel.Visibility = Visibility.Visible;
+
+            todayLabel.Style = (Style)Application.Current.Resources["textButton"];
+            weekLabel.Style = (Style)Application.Current.Resources["activeTextButton"];
         }
     }
 }
