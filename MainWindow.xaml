@@ -33,13 +33,12 @@
                 <!-- Current Weather of searched Place-->
                 <StackPanel Margin="0 20 0 0">
                     <TextBlock Text="Current Weather" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 15"/>
-                    <TextBlock Text="Nashville" FontSize="18" FontWeight="SemiBold" Margin="10 0 0 0"/>
+                    <TextBlock x:Name="currentCity" Text="Nashville" FontSize="18" FontWeight="SemiBold" Margin="10 0 0 0"/>
                     <StackPanel Orientation="Horizontal" Margin="0 15 0 0">
-                        <Image Source="/Images/clear.png" Width="50" Margin="50 0 0 0" HorizontalAlignment="Left"/>
+                        <Image x:Name="sourceMod1" Source="/Images/clear.png" Width="50" Margin="50 0 0 0" HorizontalAlignment="Left"/>
                         <TextBlock x:Name="numMod1" Text="12" FontSize="45" Margin="10 0 0 0" />
-                        <TextBlock x:Name="tempMod1" Text="°C" FontSize="45"/>
                     </StackPanel>
-                    <TextBlock Text="Monday, 16:00" FontSize="18" FontWeight="SemiBold" Margin="50 15 0 0"/>
+                    <!-- <TextBlock Text="Monday, 16:00" FontSize="18" FontWeight="SemiBold" Margin="50 15 0 0"/> -->
                     <Separator Background="#dadada" Height="2" Margin="40 20 40 60"/>
                 </StackPanel>
                 
@@ -132,25 +131,24 @@
                     <Border Style="{StaticResource widgetBorder}">
                         <StackPanel>
                             <TextBlock Text="UV Index" Style="{StaticResource headerText}"/>
-                            <TextBlock Text="5" FontSize="60" Margin="10 10 0 0" Foreground="#4a4a4a"/>
-                            <TextBlock Text="High" FontSize="20" Margin="10 10 0 0" Foreground="#4a4a4a"/>
+                            <TextBlock x:Name="UV" Text="5" FontSize="60" Margin="10 30 0 0" Foreground="#4a4a4a"/>
                         </StackPanel>
                     </Border>
                     <!-- Widget 2 -->
                     <Border Style="{StaticResource widgetBorder}">
                         <StackPanel>
                             <TextBlock Text="Humidity" Style="{StaticResource headerText}"/>
-                            <TextBlock Text="50%" FontSize="60" Margin="10 30 0 0" Foreground="#4a4a4a"/>
+                            <TextBlock x:Name="Humidity" Text="50%" FontSize="60" Margin="10 30 0 0" Foreground="#4a4a4a"/>
                         </StackPanel>
                     </Border>
                     <!-- Widget 3 -->
                     <Border Style="{StaticResource widgetBorder}">
                         <StackPanel>
                             <TextBlock Text="Sunset" Style="{StaticResource headerText}"/>
-                            <TextBlock Text="7:29 PM" FontSize="30" Margin="5" Foreground="#4a4a4a"/>
+                            <TextBlock x:Name="sunset" Text="7:29 PM" FontSize="30" Margin="5" Foreground="#4a4a4a"/>
                             <Separator Height="2" Margin="10 5 10 5"/>
                             <TextBlock Text="Sunrise" Style="{StaticResource headerText}"/>
-                            <TextBlock Text="6:01 AM" FontSize="30" Margin="5" Foreground="#4a4a4a"/>
+                            <TextBlock x:Name="sunrise" Text="6:01 AM" FontSize="30" Margin="5" Foreground="#4a4a4a"/>
                         </StackPanel>
                     </Border>
                     <!-- Widget 4 -->
@@ -159,14 +157,14 @@
                             <TextBlock Text="Wind Status" Style="{StaticResource headerText}"/>
                             <StackPanel Orientation="Horizontal" Margin="15" VerticalAlignment="Center" >
                                 <TextBlock Text="Winds" FontSize="30" Margin="10 0 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock Text="2" FontSize="30" Margin="50 0 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock Text="mph" FontSize="15" Margin="0 0 0 5" Foreground="#4a4a4a" VerticalAlignment="Bottom"/>
+                                <TextBlock x:Name="wind_speed" Text="2" FontSize="18" Margin="20 0 0 0" Foreground="#4a4a4a" VerticalAlignment="Center"/>
+
                             </StackPanel>
                             <Separator Height="2" Margin="15 0 15 0"/>
                             <StackPanel Orientation="Horizontal" Margin="15" VerticalAlignment="Center" >
                                 <TextBlock Text="Gusts" FontSize="30" Margin="10 0 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock Text="2" FontSize="30" Margin="60 0 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock Text="mph" FontSize="15" Margin="0 0 0 5" Foreground="#4a4a4a" VerticalAlignment="Bottom"/>
+                                <TextBlock x:Name="wind_gust" Text="2" FontSize="18" Margin="30 0 0 0" Foreground="#4a4a4a" VerticalAlignment="Center"/>
+
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -174,12 +172,8 @@
                     <Border Style="{StaticResource widgetBorder}">
                         <StackPanel>
                             <TextBlock Text="Visibilty" Style="{StaticResource headerText}"/>
-                            <StackPanel Orientation="Horizontal" Margin="15" VerticalAlignment="Center" >
-
-                                <TextBlock Text="2" FontSize="60" Margin="10 20 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock Text="Miles" FontSize="30" Margin="0 0 0 5" Foreground="#4a4a4a" VerticalAlignment="Bottom"/>
+                            <TextBlock x:Name="Vis" Text="2" FontSize="60" Margin="10 20 0 0" Foreground="#4a4a4a"/>
                             </StackPanel>
-                        </StackPanel>
                     </Border>
                     <!-- Widget 6 -->
                     <Border Style="{StaticResource widgetBorder}">
@@ -187,14 +181,12 @@
                             <TextBlock Text="Temperature" Style="{StaticResource headerText}"/>
                             <StackPanel Orientation="Horizontal" Margin="15" VerticalAlignment="Center" >
                                 <TextBlock Text="High" FontSize="30" Margin="10 0 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock x:Name="numMod5" Text="2" FontSize="30" Margin="55 0 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock x:Name="tempMod5" Text="°C" FontSize="30" Foreground="#4a4a4a"/>
+                                <TextBlock x:Name="highMod" Text="2" FontSize="30" Margin="55 0 0 0" Foreground="#4a4a4a"/>
                             </StackPanel>
                             <Separator Height="2" Margin="15 0 15 0"/>
                             <StackPanel Orientation="Horizontal" Margin="15" VerticalAlignment="Center" >
                                 <TextBlock Text="Low" FontSize="30" Margin="10 0 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock x:Name="numMod6" Text="2" FontSize="30" Margin="60 0 0 0" Foreground="#4a4a4a"/>
-                                <TextBlock x:Name="tempMod6" Text="°C" FontSize="30"  Foreground="#4a4a4a"/>
+                                <TextBlock x:Name="lowMod" Text="2" FontSize="30" Margin="60 0 0 0" Foreground="#4a4a4a"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>

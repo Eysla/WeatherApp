@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -95,13 +96,15 @@ namespace Group_Project
                 string weatherUrl =
                     $"https://api.open-meteo.com/v1/forecast?" +
                     $"latitude={lat}&longitude={lon}" +
-                    "&hourly=temperature_2m,precipitation_probability,weathercode" +
-                    "&daily=temperature_2m_max,temperature_2m_min," +
+                    "&hourly=temperature_2m,precipitation_probability,uv_index,weathercode" +
+                    "&daily=sunset,sunrise,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max," +
                         "precipitation_probability_max,weathercode" +
                     "&current_weather=true" +
                     $"&temperature_unit={unit}" +
                     "&forecast_days=7" +
-                    "&timezone=auto";
+                    "&timezone=auto" +
+                    "&wind_speed_unit=ms";
+
 
                 // Send weather data request
                 var weatherResp = await client.GetAsync(weatherUrl);
@@ -153,6 +156,10 @@ namespace Group_Project
                 var dailyMinTemps = (JArray)weatherJson["daily"]["temperature_2m_min"];
                 var dailyPrecip = (JArray)weatherJson["daily"]["precipitation_probability_max"];
                 var dailyCodes = (JArray)weatherJson["daily"]["weathercode"];
+                var dailysunset = (JArray)weatherJson["daily"]["sunset"];
+                var dailysunrise = (JArray)weatherJson["daily"]["sunrise"];
+                var dailywind = (JArray)weatherJson["daily"]["wind_speed_10m_max"];
+                var dailygust = (JArray)weatherJson["daily"]["wind_gusts_max"];
 
                 for (int i = 0; i < dailyTimes.Count; i++)
                 {
@@ -172,9 +179,9 @@ namespace Group_Project
                 string curTimeStr = weatherJson["current_weather"]["time"].ToString();
                 DateTime curTime = DateTime.Parse(curTimeStr);
                 int curTemp = weatherJson["current_weather"]["temperature"].ToObject<int>();
-
+                
                 // Default if not found in hourly array
-                int curPrecip = 0, curCode = 0;
+                int curPrecip = 0, curCode = 0, curwind = 0, curgust = 0;
                 var hoursTimes = (JArray)weatherJson["hourly"]["time"];
                 var hoursTemps = (JArray)weatherJson["hourly"]["temperature_2m"];
                 var hoursPrecip = (JArray)weatherJson["hourly"]["precipitation_probability"];
@@ -187,10 +194,31 @@ namespace Group_Project
                     {
                         curPrecip = hoursPrecip[j].ToObject<int>();
                         curCode = hoursCodes[j].ToObject<int>();
+                        
                         break;
                     }
                 }
                 AddHourlyCard(curTime, curTemp, curPrecip, curCode, unitSymbol);
+
+                //Change time on current time panel and today's highligh
+                currentCity.Text = cityName;
+                numMod1.Text = curTemp.ToString() + unitSymbol;
+                sourceMod1.Source = new BitmapImage(new Uri($"pack://application:,,,/Images/{iconFilename(curCode)}"));
+
+                //Widgets
+
+                wind_speed.Text = curwind[0] + "m/s";
+                wind_gust.Text = curgust[0] + "m/s";
+
+                string todaySunset = dailysunset[0].ToString();
+                DateTime Sunset = DateTime.Parse(todaySunset);
+                sunset.Text = $"{Sunset:hh:mm tt}";
+                string todaySunrise = dailysunrise[0].ToString();
+                DateTime Sunrise = DateTime.Parse(todaySunrise);
+                sunrise.Text = $"{Sunrise:hh:mm tt}";
+
+
+
 
                 // Then show the next 24 hours
                 DateTime endTime = curTime.AddHours(24);
@@ -215,21 +243,20 @@ namespace Group_Project
             }
         }
 
-        // Builds a single day card in the 7‑day forecast area.
-        // Creates an icon + date + high/low/precip chances grid.
-        private void AddDailyCard(
-            string date,
-            int hi,
-            int lo,
-            int precipPct,
-            int weatherCode,
-            string unitSymbol)
+
+        //-----------------Parsing and Formatting---------------------
+        // Parse & format date (e.g. April 17)
+        private string dateFormat(string date)
         {
-            // Parse & format date (e.g. April 17)
             if (!DateTime.TryParse(date, out DateTime dt))
                 dt = DateTime.Today;
             string formattedDate = dt.ToString("MMMM d");
+            return formattedDate;
+        }
 
+        // Find the filename for the icon related to the weatherCode
+        private string iconFilename(int weatherCode)
+        {
             // Map weatherCode to an icon filename
             string iconFile = weatherCode switch
             {
@@ -256,8 +283,27 @@ namespace Group_Project
                 96 or 99 => "thunderstormwithhail.png",
                 _ => "unknown.png",
             };
+            return iconFile;
+        }
+        //-----------------Parsing and Formatting---------------------
 
-            // Create the visual card container
+        //--------------Populate day and hour cards-------------------
+        // Function: Builds a single day card in the 7‑day forecast area.
+        // Creates an icon + date + high/low/precip chances grid.
+        private void AddDailyCard(
+            string date,
+            int hi,
+            int lo,
+            int precipPct,
+            int weatherCode,
+            string unitSymbol)
+        {
+
+            //Formatting
+            string formattedDate = dateFormat(date);
+            string iconFile = iconFilename(weatherCode);
+
+            // Create the visual card container (uses CardDay.xaml)
             CardDay cardDay = new CardDay()
             {
                 Source = new BitmapImage(new Uri($"pack://application:,,,/Images/{iconFile}")),
@@ -266,10 +312,13 @@ namespace Group_Project
                 Mintemp = $"{lo}{unitSymbol}",
                 Prcpt = $"{precipPct}%"
             };
+
+            //Populate the today panel
             DailyPanel.Children.Add(cardDay);
         }
 
-        // Builds a single hourly forecast card with an icon stacked above time/temp/precip text.
+        // Function: Builds a single hourly forecast card
+        // Creates an Icon stacked above time/temp/precip text.
         private void AddHourlyCard(
             DateTime time,
             int temp,
@@ -277,34 +326,10 @@ namespace Group_Project
             int weatherCode,
             string unitSymbol)
         {
-            // Map code → icon (same as daily)
-            string iconFile = weatherCode switch
-            {
-                0 => "clear.png",
-                1 => "mostlyclear.png",
-                2 => "partlycloudy.png",
-                3 => "overcast.png",
-                45 => "fog.png",
-                48 => "rimefog.png",
-                51 => "lightdrizzle.png",
-                53 => "moderatedrizzle.png",
-                55 => "densedrizzle.png",
-                56 => "lightfreezingdrizzle.png",
-                57 => "densefreezingdrizzle.png",
-                61 or 63 or 80 or 81 => "moderaterain.png",
-                65 or 82 => "heavyrain.png",
-                66 => "lightfreezingrain.png",
-                67 => "heavyfreezingrain.png",
-                71 => "slightsnowfall.png",
-                73 => "moderatesnowfall.png",
-                75 or 86 => "heavysnowfall.png",
-                77 => "snowflake.png",
-                95 => "thunderstorm.png",
-                96 or 99 => "thunderstormwithhail.png",
-                _ => "unknown.png",
-            };
+            // Format
+            string iconFile = iconFilename(weatherCode);
 
-            // Create the visual card container
+            // Create the visual card container (user CardHour.xaml)
             CardHour cardHour = new CardHour()
             {
                 Source = new BitmapImage(new Uri($"pack://application:,,,/Images/{iconFile}")),
@@ -312,9 +337,12 @@ namespace Group_Project
                 Temp= $"{temp}{unitSymbol}",
                 Prcpt= $"{precip}%"
             };
+            // Populate the week panel 
             HourlyPanel.Children.Add( cardHour );
         }
+        //--------------Populate day and hour cards-------------------
 
+        //---------------Today's panel drag-scroll--------------------
         // Begin drag‑scroll when mouse button is pressed.
         private void HourlyScrollViewer_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -341,7 +369,9 @@ namespace Group_Project
             _isDraggingHourly = false;
             HourlyScrollViewer.ReleaseMouseCapture();
         }
+        //---------------Today's panel drag-scroll--------------------
 
+        //-------------------Link to resources------------------------
         // Opens the Nominatim attribution link in the default browser.
         private void Nominatim_LinkClicked(object sender, MouseButtonEventArgs e)
         {
@@ -361,12 +391,16 @@ namespace Group_Project
                 UseShellExecute = true
             });
         }
+        //-------------------Link to resources------------------------
 
+        //------------------------------------------------------------
+        //Exit Button
         private void exitButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             this.Close();
         }
 
+        //Drag the app around the screen (using the right side menu)
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)
@@ -374,7 +408,9 @@ namespace Group_Project
                 this.DragMove();
             }
         }
+        //------------------------------------------------------------
 
+        //-----------------------Search Bar---------------------------
         private void textSearch_MouseDown(object sender, MouseButtonEventArgs e)
         {
             txtSearch.Focus();
@@ -391,7 +427,7 @@ namespace Group_Project
                 textSearch.Visibility = Visibility.Visible;
             }
         }
-
+        //Instead of pressing the search button can press enter to load the city
         private void txtSearch_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
@@ -400,6 +436,7 @@ namespace Group_Project
             }
         }
 
+        //Styling choice when pressing between week and today label 1
         private void todayLabel_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             HourlyPanel.Visibility = Visibility.Visible;
@@ -408,7 +445,7 @@ namespace Group_Project
             todayLabel.Style = (Style)Application.Current.Resources["activeTextButton"];
             weekLabel.Style = (Style)Application.Current.Resources["textButton"];
         }
-
+        //Styling choice when pressing between week and today label 2
         private void weekLabel_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             HourlyPanel.Visibility= Visibility.Collapsed;
