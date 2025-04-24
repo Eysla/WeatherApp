@@ -40,8 +40,8 @@ namespace Group_Project.UserControls
 
         public string Mintemp
         {
-            get { return (string)GetValue(MaxtempProperty); }
-            set { SetValue(MaxtempProperty, value); }
+            get { return (string)GetValue(MintempProperty); }
+            set { SetValue(MintempProperty, value); }
         }
         public static readonly DependencyProperty MintempProperty = DependencyProperty.Register("Mintemp", typeof(string), typeof(CardDay));
 
