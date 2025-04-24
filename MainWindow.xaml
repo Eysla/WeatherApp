@@ -36,7 +36,7 @@
                     <TextBlock x:Name="currentCity" Text="Nashville" FontSize="18" FontWeight="SemiBold" Margin="10 0 0 0"/>
                     <StackPanel Orientation="Horizontal" Margin="0 15 0 0">
                         <Image x:Name="sourceMod1" Source="/Images/clear.png" Width="50" Margin="50 0 0 0" HorizontalAlignment="Left"/>
-                        <TextBlock x:Name="numMod1" Text="12" FontSize="45" Margin="10 0 0 0" />
+                        <TextBlock x:Name="numMod1" Text="" FontSize="45" Margin="10 0 0 0" />
                     </StackPanel>
                     <!-- <TextBlock Text="Monday, 16:00" FontSize="18" FontWeight="SemiBold" Margin="50 15 0 0"/> -->
                     <Separator Background="#dadada" Height="2" Margin="40 20 40 60"/>
