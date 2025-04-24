@@ -4,6 +4,141 @@
              xmlns:local="clr-namespace:Group_Project"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <Style x:Key="textHint" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#acb0af"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Grid.Column" Value="1"/>
+            <Setter Property="Panel.ZIndex" Value="1"/>
+            <Setter Property="Margin" Value="10 0 0 0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="textBox" TargetType="TextBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#878787"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="10 0 0 0"/>
+            <Setter Property="Grid.Column" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="textButton" TargetType="Label">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Label">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="#333333">
+                     <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </TextBlock>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Label">
+                                <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="#333333">
+                                    <TextBlock.TextDecorations>
+                                        <TextDecoration Location="Underline" PenOffset="3"/>
+                                    </TextBlock.TextDecorations>
+                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </TextBlock>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="activeTextButton" TargetType="Label" BasedOn="{StaticResource textButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Label">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="#333333">
+                            <TextBlock.TextDecorations>
+                                <TextDecoration Location="Underline" PenOffset="3"/>
+                            </TextBlock.TextDecorations>
+                     <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </TextBlock>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="button" TargetType="ToggleButton">
+            <Setter Property="Background" Value="#ffffff"/>
+            <Setter Property="Foreground" Value="#1a1a1a"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="50">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1a1a1a"/>
+                    <Setter Property="Foreground" Value="#ffffff"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="searchButton" TargetType="Button">
+            <Setter Property="Background" Value="#2a2a2a"/>
+            <Setter Property="Foreground" Value="#ffffff"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="15">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+            <Style.Triggers>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="Black"/>
+                    <Setter Property="Foreground" Value="#ffffff"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="widgetBorder" TargetType="Border">
+            <Setter Property="Background" Value="#ffffff"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Width" Value="270"/>
+            <Setter Property="Height" Value="190"/>
+            <Setter Property="Margin" Value="15 15 0 0"/>
+            <Setter Property="Padding" Value="20 15"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#e9e9e9"/>
+
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#03a9f4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="headerText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#1a1a1a"/>
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
     </Application.Resources>
 </Application>
